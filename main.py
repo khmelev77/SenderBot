@@ -206,12 +206,12 @@ def send_notifications(message):
 
     elif message.content_type == "photo":
         mdict_set_or_add_el(message.media_group_id,
-                            types.InputMediaPhoto(message.photo[-1].file_id, caption=escape_markdown(message.caption)),
+                            types.InputMediaPhoto(message.photo[-1].file_id, caption=message.caption, parse_mode="html"),
                             "multimedia")
 
     elif message.content_type == "video":
         mdict_set_or_add_el(message.media_group_id,
-                            types.InputMediaVideo(message.video.file_id, caption=escape_markdown(message.caption)),
+                            types.InputMediaVideo(message.video.file_id, caption=message.caption, parse_mode="html"),
                             "multimedia")
         # file_id_info = bot.get_file(message.video.file_id)
         # downloaded_file = bot.download_file(file_id_info.file_path)
