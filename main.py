@@ -147,8 +147,7 @@ def mailer(messages_to_send_queue):
                     adm_markup = types.ReplyKeyboardMarkup(row_width=2)
                     itembtn1 = types.KeyboardButton('Создать рассылку')
                     itembtn2 = types.KeyboardButton('Статистика')
-                    itembtn3 = types.KeyboardButton('Назад')
-                    adm_markup.add(itembtn1, itembtn2, itembtn3)
+                    adm_markup.add(itembtn1, itembtn2)
 
                     bot.send_message(user['chat_id'],
                                      "✅ Рассылка успешно запущена\!\n\nДобро пожаловать в *Панель Администратора*\! 👋🏻\n\n🖥 _Вы можете выбрать нужную опцию ниже или "
