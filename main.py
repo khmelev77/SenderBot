@@ -106,7 +106,7 @@ def send_notifications(message):
     if message.content_type == "text":
         for user in users:
             try:
-                bot.send_message(user['chat_id'], text=message.text, reply_markup=markup)
+                bot.send_message(user['chat_id'], text=message.text, reply_markup=markup, parse_mode="Markdown")
             except:
                 traceback.print_exc()
                 continue
@@ -114,7 +114,7 @@ def send_notifications(message):
     elif message.content_type == "photo":
         for user in users:
             try:
-                bot.send_photo(user['chat_id'], photo=message.photo[-1].file_id, caption=message.caption, reply_markup=markup)
+                bot.send_photo(user['chat_id'], photo=message.photo[-1].file_id, caption=message.caption, reply_markup=markup, parse_mode="Markdown")
             except:
                 traceback.print_exc()
                 continue
@@ -124,7 +124,7 @@ def send_notifications(message):
         downloaded_file = bot.download_file(file_id_info.file_path)
         for user in users:
             try:
-                bot.send_video(user['chat_id'], data=downloaded_file, caption=message.caption, reply_markup=markup)
+                bot.send_video(user['chat_id'], data=downloaded_file, caption=message.caption, reply_markup=markup, parse_mode="Markdown")
             except:
                 traceback.print_exc()
                 continue
