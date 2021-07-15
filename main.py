@@ -28,11 +28,11 @@ def set_session(bot_instance, message):
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup = types.InlineKeyboardMarkup()
     if message.user_data['notifications_status']:
-        itembtn1 = types.KeyboardButton('Остановить рассылку')
+        itembtn1 = types.InlineKeyboardButton('Остановить рассылку', callback_data="stop_notifications")
     else:
-        itembtn1 = types.KeyboardButton('Включить рассылку')
+        itembtn1 = types.InlineKeyboardButton('Включить рассылку', callback_data="start_notifications")
     markup.add(itembtn1)
     bot.reply_to(message,
                  "Здравствуйте\! 👋🏻\n\n💌 _Я могу присылать Вам последние новости, о которых Вам стоит знать\.\n\n📪 Вы "
@@ -40,30 +40,30 @@ def send_welcome(message):
                  reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: message.text == "Остановить рассылку", content_types=['text'])
-def stop_notifiactions(message):
-    user_id = message.from_user.id
+@bot.callback_query_handler(func=lambda call: call.data == "stop_notifications")
+def stop_notifiactions(call):
+    user_id = call.from_user.id
     stop_user_notifications(user_id, cursor, conn)
 
-    markup = types.ReplyKeyboardMarkup(row_width=1)
-    itembtn1 = types.KeyboardButton('Включить рассылку')
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    itembtn1 = types.InlineKeyboardButton('Включить рассылку', callback_data="start_notifications")
     markup.add(itembtn1)
 
-    bot.reply_to(message,
+    bot.reply_to(call.message,
                  "😔 Рассылка новостей преостановлена\.\n\n📪 _Если в будущем, Вы захотите включить рассылку, "
                  "то нажмите \"Включить рассылку\"\._", reply_markup=markup)
 
 
-@bot.message_handler(func=lambda message: message.text == "Включить рассылку", content_types=['text'])
-def start_notifiactions(message):
-    user_id = message.from_user.id
+@bot.callback_query_handler(func=lambda call: call.data == "start_notifications")
+def start_notifiactions(call):
+    user_id = call.from_user.id
     start_user_notifications(user_id, cursor, conn)
 
-    markup = types.ReplyKeyboardMarkup(row_width=1)
-    itembtn1 = types.KeyboardButton('Остановить рассылку')
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    itembtn1 = types.InlineKeyboardButton('Остановить рассылку', callback_data="stop_notifications")
     markup.add(itembtn1)
 
-    bot.reply_to(message,
+    bot.reply_to(call.message,
                  "☺️Рассылка новостей включена\.\n\n📫 _Если в будущем, Вы захотите выключить рассылку, то нажмите "
                  "\"Остановить рассылку\"\._", reply_markup=markup)
 
@@ -88,8 +88,7 @@ def admin_panel(message):
         markup = types.ReplyKeyboardMarkup(row_width=1)
         itembtn1 = types.KeyboardButton('Создать рассылку')
         itembtn2 = types.KeyboardButton('Статистика')
-        itembtn3 = types.KeyboardButton('Назад')
-        markup.add(itembtn1, itembtn2, itembtn3)
+        markup.add(itembtn1, itembtn2)
 
         bot.reply_to(message,
                      "Добро пожаловать в *Панель Администратора*\! 👋🏻\n\n🖥 _Вы можете выбрать нужную опцию ниже или "
@@ -100,10 +99,14 @@ def admin_panel(message):
 def send_notifications(message):
     users = get_all_users(cursor)
 
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    itembtn1 = types.InlineKeyboardButton('Остановить рассылку', callback_data="stop_notifications")
+    markup.add(itembtn1)
+
     if message.content_type == "text":
         for user in users:
             try:
-                bot.send_message(user['chat_id'], text=message.text)
+                bot.send_message(user['chat_id'], text=message.text, reply_markup=markup)
             except:
                 traceback.print_exc()
                 continue
@@ -111,7 +114,7 @@ def send_notifications(message):
     elif message.content_type == "photo":
         for user in users:
             try:
-                bot.send_photo(user['chat_id'], photo=message.photo[-1].file_id, caption=message.caption)
+                bot.send_photo(user['chat_id'], photo=message.photo[-1].file_id, caption=message.caption, reply_markup=markup)
             except:
                 traceback.print_exc()
                 continue
@@ -121,7 +124,7 @@ def send_notifications(message):
         downloaded_file = bot.download_file(file_id_info.file_path)
         for user in users:
             try:
-                bot.send_video(user['chat_id'], data=downloaded_file, caption=message.caption)
+                bot.send_video(user['chat_id'], data=downloaded_file, caption=message.caption, reply_markup=markup)
             except:
                 traceback.print_exc()
                 continue
@@ -155,28 +158,13 @@ def admin_auth(message):
                      get_bot_stats(cursor))
 
 
-@bot.message_handler(func=lambda message: message.text == "Назад")
-def admin_auth(message):
-    markup = types.ReplyKeyboardMarkup(row_width=1)
-    if message.user_data['notifications_status']:
-        itembtn1 = types.KeyboardButton('Остановить рассылку')
-    else:
-        itembtn1 = types.KeyboardButton('Включить рассылку')
-    markup.add(itembtn1)
-    bot.reply_to(message,
-                 "Вы вернулись в главное меню и видите то, что видит обычный пользователь 🗿\.",
-                 reply_markup=markup)
-
-
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
-
-    markup = types.ReplyKeyboardMarkup(row_width=1)
+    markup = types.InlineKeyboardMarkup()
     if message.user_data['notifications_status']:
-        itembtn1 = types.KeyboardButton('Остановить рассылку')
+        itembtn1 = types.InlineKeyboardButton('Остановить рассылку', callback_data="stop_notifications")
     else:
-        itembtn1 = types.KeyboardButton('Включить рассылку')
-
+        itembtn1 = types.InlineKeyboardButton('Включить рассылку', callback_data="start_notifications")
     markup.add(itembtn1)
 
     bot.reply_to(message,
