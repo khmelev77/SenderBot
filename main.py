@@ -1,3 +1,4 @@
+print("Bot runned!")
 import telebot
 import sqlite3
 import traceback
