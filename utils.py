@@ -1,3 +1,6 @@
+import threading
+import re
+
 from sqlite3 import IntegrityError
 
 
@@ -30,9 +33,14 @@ def set_admin_status(user_id, cursor, conn):
     cursor.execute(f"UPDATE users SET admin_status = 1 WHERE user_id = {user_id};")
     conn.commit()
 
+lock = threading.Lock()
 def get_all_users(cursor):
-    rows = cursor.execute(f"SELECT * FROM users")
-    data = rows.fetchall()
+    try:
+        lock.acquire(True)
+        rows = cursor.execute(f"SELECT * FROM users")
+        data = rows.fetchall()
+    finally:
+        lock.release()
     return data
 
 def get_bot_stats(cursor):
@@ -45,3 +53,12 @@ def get_bot_stats(cursor):
         if i['notifications_status']: active_users += 1
 
     return f"Бот запустили __{users_amount}__ чел\., из них включили уведомления: __{active_users}__\."
+
+def escape_markdown(text):
+    # Use {} and reverse markdown carefully.
+    try:
+        parse = re.sub(r"([_*\[\]()~`>\#\+\-=|\.!])", r"\\\1", text)
+        reparse = re.sub(r"\\\\([_*\[\]()~`>\#\+\-=|\.!])", r"\1", parse)
+    except TypeError:
+        return None
+    return reparse
