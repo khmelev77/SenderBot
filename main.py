@@ -85,17 +85,11 @@ def start_mailing(message):
         user_id = message.from_user.id
         USER_INPUT_FLAGS[user_id] = True
 
-        markup = types.ReplyKeyboardRemove()
-
-        bot.reply_to(message,
-                     "*\(\!\)* Для создания рассылки отправьте мне сообщение, которое нужно разослать и я __сразу же его разошлю__\.",
-                     reply_markup=markup)
-
         markup = types.InlineKeyboardMarkup(row_width=1)
         itembtn1 = types.InlineKeyboardButton('Отмена', callback_data="cancel")
         markup.add(itembtn1)
 
-        bot.send_message(message.chat.id, "Или нажмите \"Отмена\", чтобы вернуться назад\.", reply_markup=markup)
+        bot.send_message(message.chat.id, "*\(\!\)* Для создания рассылки отправьте мне сообщение, которое нужно разослать и я __сразу же его разошлю__\.\n\nИли нажмите \"Отмена\", чтобы вернуться назад\.", reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "cancel")
@@ -142,24 +136,25 @@ def mailer(messages_to_send_queue):
         markup.add(itembtn1)
         for mq_key in messages_to_send_queue.keys():
             users = get_all_users(cursor)
+
             for user in users:
                 if user['admin_status']:
-                    adm_markup = types.ReplyKeyboardMarkup(row_width=2)
-                    itembtn1 = types.KeyboardButton('Создать рассылку')
-                    itembtn2 = types.KeyboardButton('Статистика')
-                    adm_markup.add(itembtn1, itembtn2)
-
                     bot.send_message(user['chat_id'],
-                                     "✅ Рассылка успешно запущена\!\n\nПеред Вами *Панель Администратора*\. 👋🏻\n\n🖥 _Вы можете выбрать нужную опцию ниже или "
-                                     "вернуться обратно\._", reply_markup=adm_markup)
+                                     "🟢 Рассылка успешно запущена\!")
 
             content = messages_to_send_queue[mq_key]['content']
             content_type = messages_to_send_queue[mq_key]['content_type']
+
+            error = False
             if content_type == "text":
                 for user in users:
                     if user['notifications_status']:
                         try:
-                            bot.send_message(user['chat_id'], text=escape_markdown(content[0]), reply_markup=markup)
+                            bot.send_message(user['chat_id'], text=content[0], reply_markup=markup, parse_mode="html")
+                        except telebot.apihelper.ApiTelegramException as e:
+                            error = True
+                            traceback.print_exc()
+                            break
                         except:
                             traceback.print_exc()
                             continue
@@ -170,11 +165,23 @@ def mailer(messages_to_send_queue):
                             bot.send_media_group(user['chat_id'], media=content)
                             # bot.send_message(user['chat_id'], text="📫 Вы всегда можете остановить рассылку!",
                             #                  reply_markup=markup, parse_mode="Markdown")
+                        except telebot.apihelper.ApiTelegramException as e:
+                            error = True
+                            traceback.print_exc()
+                            break
                         except:
                             traceback.print_exc()
                             continue
             del (messages_to_send_queue[mq_key])
 
+            if error:
+                for user in users:
+                    if user['admin_status']:
+                        bot.send_message(user['chat_id'], "🔴 Ошибка, рассылка остановилась, проверьте формат текста\!\n\n")
+            else:
+                for user in users:
+                    if user['admin_status']:
+                        bot.send_message(user['chat_id'], "🏁 Рассылка успешно закончилась\!")
 
 @bot.message_handler(func=lambda message: message.text == "Статистика")
 def admin_auth(message):
@@ -186,7 +193,6 @@ def admin_auth(message):
 @bot.message_handler(func=lambda message: USER_INPUT_FLAGS.get(message.from_user.id),
                      content_types=['document', 'audio', 'photo', 'video', 'text'])
 def send_notifications(message):
-    users = get_all_users(cursor)
     markup = types.InlineKeyboardMarkup(row_width=1)
     itembtn1 = types.InlineKeyboardButton('Остановить рассылку', callback_data="stop_notifications")
     markup.add(itembtn1)
@@ -195,6 +201,7 @@ def send_notifications(message):
         message.media_group_id = message.id
 
     if message.content_type == "text":
+        print(message)
         mdict_set_or_add_el(message.media_group_id, message.text, "text")
 
     elif message.content_type == "photo":
