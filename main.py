@@ -150,27 +150,29 @@ def mailer(messages_to_send_queue):
                     adm_markup.add(itembtn1, itembtn2)
 
                     bot.send_message(user['chat_id'],
-                                     "✅ Рассылка успешно запущена\!\n\nДобро пожаловать в *Панель Администратора*\! 👋🏻\n\n🖥 _Вы можете выбрать нужную опцию ниже или "
+                                     "✅ Рассылка успешно запущена\!\n\nПеред Вами *Панель Администратора*\! 👋🏻\n\n🖥 _Вы можете выбрать нужную опцию ниже или "
                                      "вернуться обратно\._", reply_markup=adm_markup)
 
             content = messages_to_send_queue[mq_key]['content']
             content_type = messages_to_send_queue[mq_key]['content_type']
             if content_type == "text":
                 for user in users:
-                    try:
-                        bot.send_message(user['chat_id'], text=escape_markdown(content[0]), reply_markup=markup)
-                    except:
-                        traceback.print_exc()
-                        continue
+                    if user['notifications_status']:
+                        try:
+                            bot.send_message(user['chat_id'], text=escape_markdown(content[0]), reply_markup=markup)
+                        except:
+                            traceback.print_exc()
+                            continue
             elif content_type == 'multimedia':
                 for user in users:
-                    try:
-                        bot.send_media_group(user['chat_id'], media=content)
-                        bot.send_message(user['chat_id'], text="📫 Вы всегда можете остановить рассылку!",
-                                         reply_markup=markup, parse_mode="Markdown")
-                    except:
-                        traceback.print_exc()
-                        continue
+                    if user['notifications_status']:
+                        try:
+                            bot.send_media_group(user['chat_id'], media=content)
+                            # bot.send_message(user['chat_id'], text="📫 Вы всегда можете остановить рассылку!",
+                            #                  reply_markup=markup, parse_mode="Markdown")
+                        except:
+                            traceback.print_exc()
+                            continue
             del (messages_to_send_queue[mq_key])
 
 
